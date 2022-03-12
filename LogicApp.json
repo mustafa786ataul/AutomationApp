@@ -1,0 +1,132 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "For_each": {
+                "actions": {
+                    "Create_blob_(V2)": {
+                        "inputs": {
+                            "body": "@body('Get_file_content')",
+                            "headers": {
+                                "ReadFileMetadataFromServer": true
+                            },
+                            "host": {
+                                "connection": {
+                                    "referenceName": "azureblob"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('storageaccountricalbdc1'))}/files",
+                            "queries": {
+                                "folderPath": "/container1234",
+                                "name": "@items('For_each')?['DisplayName']",
+                                "queryParametersSingleEncoded": true
+                            }
+                        },
+                        "runAfter": {
+                            "Get_file_content": [
+                                "Succeeded"
+                            ]
+                        },
+                        "runtimeConfiguration": {
+                            "contentTransfer": {
+                                "transferMode": "Chunked"
+                            }
+                        },
+                        "type": "ApiConnection"
+                    },
+                    "Get_file_content": {
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "referenceName": "sharepointonline"
+                                }
+                            },
+                            "method": "get",
+                            "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://ingrammicro.sharepoint.com/sites/OG-IaaSManagedServices'))}/files/@{encodeURIComponent(items('For_each')?['Id'])}/content",
+                            "queries": {
+                                "inferContentType": true
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    }
+                },
+                "foreach": "@body('List_folder')",
+                "runAfter": {
+                    "List_folder": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "List_folder": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://ingrammicro.sharepoint.com/sites/OG-IaaSManagedServices'))}/folders/@{encodeURIComponent('%252fShared%2bDocuments%252fGeneral%252fRI%2bTEST')}"
+                },
+                "metadata": {
+                    "%252fShared%2bDocuments%252fGeneral%252fRI%2bTEST": "/Shared Documents/General/RI TEST"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Send_an_email_(V2)": {
+                "inputs": {
+                    "body": {
+                        "Body": "<p>File fetched</p>",
+                        "Subject": "from RI logic app",
+                        "To": "ataulm786@gmail.com"
+                    },
+                    "host": {
+                        "connection": {
+                            "referenceName": "office365"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/v2/Mail"
+                },
+                "runAfter": {
+                    "For_each": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "triggers": {
+            "When_a_file_is_created_in_a_folder": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "sharepointonline"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://ingrammicro.sharepoint.com/sites/OG-IaaSManagedServices'))}/triggers/onnewfile",
+                    "queries": {
+                        "folderId": "%252fShared%2bDocuments%252fGeneral%252fRI%2bTEST",
+                        "inferContentType": true,
+                        "queryParametersSingleEncoded": true
+                    }
+                },
+                "metadata": {
+                    "%252fShared%2bDocuments%252fGeneral%252fRI%2bTEST": "/Shared Documents/General/RI TEST"
+                },
+                "recurrence": {
+                    "frequency": "Minute",
+                    "interval": 1
+                },
+                "type": "ApiConnection"
+            }
+        }
+    },
+    "kind": "Stateful"
+}
